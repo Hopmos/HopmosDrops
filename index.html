@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Rain Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
+            font-family: Arial, sans-serif;
+            touch-action: manipulation;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .circle {
+            position: absolute;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            will-change: transform;
+        }
+        
+        .bomb {
+            position: absolute;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            will-change: transform;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: black;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        
+        .score-popup {
+            position: absolute;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            animation: float-up 1s forwards;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .negative-popup {
+            color: #ff5555;
+        }
+        
+        #score-board {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 100;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 100;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #game-over h2 {
+            font-size: 36px;
+            margin-top: 0;
+        }
+        
+        #final-score {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+        
+        #restart-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        
+        #mute-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+        
+        #start-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            font-size: 24px;
+            margin: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1 style="color: white;">Circle Rain Game</h1>
+        <button id="start-btn">Start Game</button>
+        <p style="color: white;">Click images for +10 points<br>Avoid bombs (-10 points)</p>
+    </div>
+
+    <div id="score-board">Score: <span id="score">0</span></div>
+    <div id="timer">Time: <span id="time">60</span>s</div>
+    <button id="mute-btn">🔊</button>
+    
+    <div id="game-container"></div>
+    
+    <div id="game-over">
+        <h2>Game Over!</h2>
+        <div>Total points collected:</div>
+        <div id="final-score">0</div>
+        <button id="restart-btn">Play Again</button>
+    </div>
+
+    <!-- Audio elements with local fallback -->
+    <audio id="bg-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-668.mp3" type="audio/mpeg">
+        <!-- Fallback silent audio to enable playback -->
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
+    </audio>
+    <audio id="click-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bomb-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-impact-1684.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score');
+        const timeDisplay = document.getElementById('time');
+        const gameOverPopup = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        
+        // Audio elements
+        const bgMusic = document.getElementById('bg-music');
+        const clickSound = document.getElementById('click-sound');
+        const bombSound = document.getElementById('bomb-sound');
+        
+        let score = 0;
+        let timeLeft = 60;
+        let gameActive = false;
+        let circleCount = 0;
+        let bombCount = 0;
+        let maxCircles = 20;
+        let maxBombs = 5;
+        let circleInterval;
+        let bombInterval;
+        let timerInterval;
+        let activeTouches = {};
+        let isMuted = false;
+        
+        // Initialize audio context
+        function initAudio() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContext();
+            
+            document.addEventListener('click', () => {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
+        }
+        
+        function createCircle() {
+            if (!gameActive || circleCount >= maxCircles) return;
+            
+            const size = Math.random() * 30 + 20; // 20-50px
+            const circle = document.createElement('img');
+            circle.className = 'circle';
+            circle.src = '<img src="./Game/mypics.jpg;">'; // Base64 encoded image
+            circle.style.width = `${size}px`;
+            circle.style.height = `${size}px`;
+            
+            const xPos = Math.random() * (window.innerWidth - size) + size/2;
+            circle.style.left = `${xPos}px`;
+            circle.style.top = `-${size}px`;
+            
+            const fallSpeed = Math.random() * 3 + 2;
+            circle.style.transition = `top ${fallSpeed}s linear`;
+            
+            gameContainer.appendChild(circle);
+            circleCount++;
+            
+            setTimeout(() => {
+                circle.style.top = `${window.innerHeight + size}px`;
+            }, 10);
+            
+            circle.addEventListener('transitionend', () => {
+                if (circle.parentNode) {
+                    gameContainer.removeChild(circle);
+                    circleCount--;
+                }
+            });
+            
+            function handleInteraction(e) {
+                if (!gameActive) return;
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (e.type === 'touchstart') {
+                    const touch = e.changedTouches[0];
+                    const touchId = touch.identifier;
+                    if (activeTouches[touchId]) return;
+                    activeTouches[touchId] = true;
+                }
+                
+                score += 10;
+                scoreDisplay.textContent = score;
+                
+                if (!isMuted) {
+                    clickSound.currentTime = 0;
+                    clickSound.play().catch(e => console.log("Click sound error:", e));
+                }
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const popup = document.createElement('div');
+                popup.className = 'score-popup';
+                popup.textContent = '+10';
+                popup.style.left = `${clientX}px`;
+                popup.style.top = `${clientY}px`;
+                gameContainer.appendChild(popup);
+                
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        gameContainer.removeChild(popup);
+                    }
+                }, 1000);
+                
+                circle.style.transition = 'none';
+                circle.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    if (circle.parentNode) {
+                        gameContainer.removeChild(circle);
+                        circleCount--;
+                    }
+                }, 50);
+                
+                circle.removeEventListener('click', handleInteraction);
+                circle.removeEventListener('touchstart', handleInteraction);
+            }
+            
+            circle.addEventListener('click', handleInteraction);
+            circle.addEventListener('touchstart', handleInteraction, { passive: false });
+        }
+        
+        function createBomb() {
+            if (!gameActive || bombCount >= maxBombs) return;
+            
+            const size = Math.random() * 40 + 30;
+            const bomb = document.createElement('div');
+            bomb.className = 'bomb';
+            bomb.textContent = '💣';
+            bomb.style.width = `${size}px`;
+            bomb.style.height = `${size}px`;
+            bomb.style.fontSize = `${size/2}px`;
+            
+            const xPos = Math.random() * (window.innerWidth - size) + size/2;
+            bomb.style.left = `${xPos}px`;
+            bomb.style.top = `-${size}px`;
+            
+            const fallSpeed = Math.random() * 4 + 3;
+            bomb.style.transition = `top ${fallSpeed}s linear`;
+            
+            gameContainer.appendChild(bomb);
+            bombCount++;
+            
+            setTimeout(() => {
+                bomb.style.top = `${window.innerHeight + size}px`;
+            }, 10);
+            
+            bomb.addEventListener('transitionend', () => {
+                if (bomb.parentNode) {
+                    gameContainer.removeChild(bomb);
+                    bombCount--;
+                }
+            });
+            
+            function handleBombInteraction(e) {
+                if (!gameActive) return;
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (e.type === 'touchstart') {
+                    const touch = e.changedTouches[0];
+                    const touchId = touch.identifier;
+                    if (activeTouches[touchId]) return;
+                    activeTouches[touchId] = true;
+                }
+                
+                score = Math.max(0, score - 10);
+                scoreDisplay.textContent = score;
+                
+                if (!isMuted) {
+                    bombSound.currentTime = 0;
+                    bombSound.play().catch(e => console.log("Bomb sound error:", e));
+                }
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const popup = document.createElement('div');
+                popup.className = 'score-popup negative-popup';
+                popup.textContent = '-10';
+                popup.style.left = `${clientX}px`;
+                popup.style.top = `${clientY}px`;
+                gameContainer.appendChild(popup);
+                
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        gameContainer.removeChild(popup);
+                    }
+                }, 1000);
+                
+                bomb.style.transition = 'none';
+                bomb.style.animation = 'explode 0.3s forwards';
+                setTimeout(() => {
+                    if (bomb.parentNode) {
+                        gameContainer.removeChild(bomb);
+                        bombCount--;
+                    }
+                }, 300);
+                
+                bomb.removeEventListener('click', handleBombInteraction);
+                bomb.removeEventListener('touchstart', handleBombInteraction);
+            }
+            
+            bomb.addEventListener('click', handleBombInteraction);
+            bomb.addEventListener('touchstart', handleBombInteraction, { passive: false });
+        }
+        
+        document.addEventListener('touchend', function(e) {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touchId = e.changedTouches[i].identifier;
+                delete activeTouches[touchId];
+            }
+        });
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                bgMusic.pause();
+                muteBtn.textContent = '🔇';
+            } else {
+                bgMusic.play().catch(e => console.log("Audio play failed:", e));
+                muteBtn.textContent = '🔊';
+            }
+        }
+        
+        muteBtn.addEventListener('click', toggleMute);
+        
+        function startGame() {
+            startScreen.style.display = 'none';
+            
+            score = 0;
+            timeLeft = 60;
+            gameActive = true;
+            scoreDisplay.textContent = '0';
+            timeDisplay.textContent = '60';
+            gameOverPopup.style.display = 'none';
+            activeTouches = {};
+            
+            while (gameContainer.firstChild) {
+                gameContainer.removeChild(gameContainer.firstChild);
+            }
+            
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(e => {
+                console.log("Background music error:", e);
+                isMuted = true;
+                muteBtn.textContent = '🔇';
+            });
+            
+            circleInterval = setInterval(() => {
+                createCircle();
+            }, 300);
+            
+            bombInterval = setInterval(() => {
+                createBomb();
+            }, 1500);
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timeDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        function endGame() {
+            gameActive = false;
+            clearInterval(circleInterval);
+            clearInterval(bombInterval);
+            clearInterval(timerInterval);
+            
+            bgMusic.pause();
+            
+            finalScoreDisplay.textContent = score;
+            gameOverPopup.style.display = 'block';
+        }
+        
+        restartBtn.addEventListener('click', startGame);
+        startBtn.addEventListener('click', startGame);
+        
+        window.addEventListener('load', initAudio);
+        
+        window.addEventListener('resize', () => {
+            maxCircles = Math.floor(window.innerWidth / 40) * 2;
+            maxBombs = Math.floor(maxCircles / 4);
+        });
+    </script>
+</body>
+</html>
