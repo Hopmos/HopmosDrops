@@ -21,7 +21,11 @@
         
         .circle {
             position: absolute;
+            border-radius: 50%;
+            background-color: white;
             cursor: pointer;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
             user-select: none;
             -webkit-user-select: none;
             will-change: transform;
@@ -142,31 +146,6 @@
             z-index: 100;
         }
         
-        #start-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 300;
-        }
-        
-        #start-btn {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            font-size: 24px;
-            margin: 20px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        
         @keyframes float-up {
             0% {
                 opacity: 1;
@@ -191,12 +170,6 @@
     </style>
 </head>
 <body>
-    <div id="start-screen">
-        <h1 style="color: white;">Circle Rain Game</h1>
-        <button id="start-btn">Start Game</button>
-        <p style="color: white;">Click images for +10 points<br>Avoid bombs (-10 points)</p>
-    </div>
-
     <div id="score-board">Score: <span id="score">0</span></div>
     <div id="timer">Time: <span id="time">60</span>s</div>
     <button id="mute-btn">🔊</button>
@@ -210,17 +183,18 @@
         <button id="restart-btn">Play Again</button>
     </div>
 
-    <!-- Audio elements with local fallback -->
+    <!-- Audio elements -->
     <audio id="bg-music" loop>
         <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-668.mp3" type="audio/mpeg">
-        <!-- Fallback silent audio to enable playback -->
-        <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
+        Your browser does not support the audio element.
     </audio>
     <audio id="click-sound">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
     </audio>
     <audio id="bomb-sound">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-impact-1684.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
     </audio>
 
     <script>
@@ -231,8 +205,6 @@
         const finalScoreDisplay = document.getElementById('final-score');
         const restartBtn = document.getElementById('restart-btn');
         const muteBtn = document.getElementById('mute-btn');
-        const startScreen = document.getElementById('start-screen');
-        const startBtn = document.getElementById('start-btn');
         
         // Audio elements
         const bgMusic = document.getElementById('bg-music');
@@ -241,7 +213,7 @@
         
         let score = 0;
         let timeLeft = 60;
-        let gameActive = false;
+        let gameActive = true;
         let circleCount = 0;
         let bombCount = 0;
         let maxCircles = 20;
@@ -252,43 +224,34 @@
         let activeTouches = {};
         let isMuted = false;
         
-        // Initialize audio context
-        function initAudio() {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            const audioContext = new AudioContext();
-            
-            document.addEventListener('click', () => {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-            }, { once: true });
-        }
-        
         function createCircle() {
             if (!gameActive || circleCount >= maxCircles) return;
             
             const size = Math.random() * 30 + 20; // 20-50px
-            const circle = document.createElement('img');
+            const circle = document.createElement('div');
             circle.className = 'circle';
-            circle.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/2wCEAAkGBxISEhUTEhIVFRUXGBgXFxgYGBcXFxgYGBcXGBgXFxgYGBcXGBgYHSggGBolHRcXITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGxAQGy0lICYtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAbAAACAwEBAQAAAAAAAAAAAAAEBQMGAAECB//EADwQAAIBAwIEAwUGAwAAAAAAAQIDBAURAAYSITEGEyJhcYGRoQYjQlJCUoGRwfDx8BVCU3KCkqLxFjNDU2Jzg7L/xAAZAQEBAQEBAQAAAAAAAAAAAAAEAwQAAQUG/8QAIxEBAQADAQEAAAAAAAAAAAAAAQIRAxIhMUFx/9oADAMBAAIRAxEAPwD3z/2Q=='; // Base64 encoded image
-            
             circle.style.width = `${size}px`;
             circle.style.height = `${size}px`;
             
+            // Random position at top
             const xPos = Math.random() * (window.innerWidth - size) + size/2;
             circle.style.left = `${xPos}px`;
             circle.style.top = `-${size}px`;
             
-            const fallSpeed = Math.random() * 3 + 2;
+            // Random fall speed
+            const fallSpeed = Math.random() * 3 + 2; // 2-5 seconds
+            
             circle.style.transition = `top ${fallSpeed}s linear`;
             
             gameContainer.appendChild(circle);
             circleCount++;
             
+            // Start falling
             setTimeout(() => {
                 circle.style.top = `${window.innerHeight + size}px`;
             }, 10);
             
+            // Remove when animation completes or when clicked
             circle.addEventListener('transitionend', () => {
                 if (circle.parentNode) {
                     gameContainer.removeChild(circle);
@@ -296,12 +259,14 @@
                 }
             });
             
+            // Handle both mouse and touch events
             function handleInteraction(e) {
                 if (!gameActive) return;
                 
                 e.preventDefault();
                 e.stopPropagation();
                 
+                // For touch events, make sure we only process once per touch
                 if (e.type === 'touchstart') {
                     const touch = e.changedTouches[0];
                     const touchId = touch.identifier;
@@ -312,14 +277,17 @@
                 score += 10;
                 scoreDisplay.textContent = score;
                 
+                // Play click sound if not muted
                 if (!isMuted) {
                     clickSound.currentTime = 0;
-                    clickSound.play().catch(e => console.log("Click sound error:", e));
+                    clickSound.play().catch(e => console.log("Audio play failed:", e));
                 }
                 
+                // Get position for popup
                 const clientX = e.clientX || e.touches[0].clientX;
                 const clientY = e.clientY || e.touches[0].clientY;
                 
+                // Create +10 popup
                 const popup = document.createElement('div');
                 popup.className = 'score-popup';
                 popup.textContent = '+10';
@@ -327,12 +295,14 @@
                 popup.style.top = `${clientY}px`;
                 gameContainer.appendChild(popup);
                 
+                // Remove popup after animation
                 setTimeout(() => {
                     if (popup.parentNode) {
                         gameContainer.removeChild(popup);
                     }
                 }, 1000);
                 
+                // Remove circle immediately
                 circle.style.transition = 'none';
                 circle.style.transform = 'scale(0)';
                 setTimeout(() => {
@@ -342,6 +312,7 @@
                     }
                 }, 50);
                 
+                // Remove event listeners to prevent multiple triggers
                 circle.removeEventListener('click', handleInteraction);
                 circle.removeEventListener('touchstart', handleInteraction);
             }
@@ -353,7 +324,7 @@
         function createBomb() {
             if (!gameActive || bombCount >= maxBombs) return;
             
-            const size = Math.random() * 40 + 30;
+            const size = Math.random() * 40 + 30; // 30-70px
             const bomb = document.createElement('div');
             bomb.className = 'bomb';
             bomb.textContent = '💣';
@@ -361,20 +332,25 @@
             bomb.style.height = `${size}px`;
             bomb.style.fontSize = `${size/2}px`;
             
+            // Random position at top
             const xPos = Math.random() * (window.innerWidth - size) + size/2;
             bomb.style.left = `${xPos}px`;
             bomb.style.top = `-${size}px`;
             
-            const fallSpeed = Math.random() * 4 + 3;
+            // Random fall speed (slightly slower than circles)
+            const fallSpeed = Math.random() * 4 + 3; // 3-7 seconds
+            
             bomb.style.transition = `top ${fallSpeed}s linear`;
             
             gameContainer.appendChild(bomb);
             bombCount++;
             
+            // Start falling
             setTimeout(() => {
                 bomb.style.top = `${window.innerHeight + size}px`;
             }, 10);
             
+            // Remove when animation completes or when clicked
             bomb.addEventListener('transitionend', () => {
                 if (bomb.parentNode) {
                     gameContainer.removeChild(bomb);
@@ -382,12 +358,14 @@
                 }
             });
             
+            // Handle both mouse and touch events for bomb
             function handleBombInteraction(e) {
                 if (!gameActive) return;
                 
                 e.preventDefault();
                 e.stopPropagation();
                 
+                // For touch events, make sure we only process once per touch
                 if (e.type === 'touchstart') {
                     const touch = e.changedTouches[0];
                     const touchId = touch.identifier;
@@ -395,17 +373,20 @@
                     activeTouches[touchId] = true;
                 }
                 
-                score = Math.max(0, score - 10);
+                score = Math.max(0, score - 10); // Don't go below 0
                 scoreDisplay.textContent = score;
                 
+                // Play bomb sound if not muted
                 if (!isMuted) {
                     bombSound.currentTime = 0;
-                    bombSound.play().catch(e => console.log("Bomb sound error:", e));
+                    bombSound.play().catch(e => console.log("Audio play failed:", e));
                 }
                 
+                // Get position for popup
                 const clientX = e.clientX || e.touches[0].clientX;
                 const clientY = e.clientY || e.touches[0].clientY;
                 
+                // Create -10 popup
                 const popup = document.createElement('div');
                 popup.className = 'score-popup negative-popup';
                 popup.textContent = '-10';
@@ -413,12 +394,14 @@
                 popup.style.top = `${clientY}px`;
                 gameContainer.appendChild(popup);
                 
+                // Remove popup after animation
                 setTimeout(() => {
                     if (popup.parentNode) {
                         gameContainer.removeChild(popup);
                     }
                 }, 1000);
                 
+                // Explode animation
                 bomb.style.transition = 'none';
                 bomb.style.animation = 'explode 0.3s forwards';
                 setTimeout(() => {
@@ -428,6 +411,7 @@
                     }
                 }, 300);
                 
+                // Remove event listeners to prevent multiple triggers
                 bomb.removeEventListener('click', handleBombInteraction);
                 bomb.removeEventListener('touchstart', handleBombInteraction);
             }
@@ -436,6 +420,7 @@
             bomb.addEventListener('touchstart', handleBombInteraction, { passive: false });
         }
         
+        // Clear touch records when touch ends
         document.addEventListener('touchend', function(e) {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touchId = e.changedTouches[i].identifier;
@@ -443,6 +428,7 @@
             }
         });
         
+        // Toggle mute function
         function toggleMute() {
             isMuted = !isMuted;
             if (isMuted) {
@@ -457,8 +443,6 @@
         muteBtn.addEventListener('click', toggleMute);
         
         function startGame() {
-            startScreen.style.display = 'none';
-            
             score = 0;
             timeLeft = 60;
             gameActive = true;
@@ -467,25 +451,26 @@
             gameOverPopup.style.display = 'none';
             activeTouches = {};
             
+            // Clear existing elements
             while (gameContainer.firstChild) {
                 gameContainer.removeChild(gameContainer.firstChild);
             }
             
+            // Start background music
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(e => {
-                console.log("Background music error:", e);
-                isMuted = true;
-                muteBtn.textContent = '🔇';
-            });
+            bgMusic.play().catch(e => console.log("Audio play failed:", e));
             
+            // Create circles periodically (faster)
             circleInterval = setInterval(() => {
                 createCircle();
             }, 300);
             
+            // Create bombs periodically (slower)
             bombInterval = setInterval(() => {
                 createBomb();
             }, 1500);
             
+            // Update timer
             timerInterval = setInterval(() => {
                 timeLeft--;
                 timeDisplay.textContent = timeLeft;
@@ -502,6 +487,7 @@
             clearInterval(bombInterval);
             clearInterval(timerInterval);
             
+            // Pause background music
             bgMusic.pause();
             
             finalScoreDisplay.textContent = score;
@@ -509,10 +495,17 @@
         }
         
         restartBtn.addEventListener('click', startGame);
-        startBtn.addEventListener('click', startGame);
         
-        window.addEventListener('load', initAudio);
+        // Start game on page load
+        window.addEventListener('load', function() {
+            // Try to play music on user interaction
+            document.addEventListener('click', function initGame() {
+                startGame();
+                document.removeEventListener('click', initGame);
+            }, { once: true });
+        });
         
+        // Adjust element creation rate based on window size
         window.addEventListener('resize', () => {
             maxCircles = Math.floor(window.innerWidth / 40) * 2;
             maxBombs = Math.floor(maxCircles / 4);
